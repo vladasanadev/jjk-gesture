@@ -1,47 +1,62 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import type { GestureId } from '../types/gestures'
 import { useWebcam } from '../hooks/useWebcam'
 import { useHandTracking } from '../hooks/useHandTracking'
 import { useGestureEngine } from '../hooks/useGestureEngine'
-import { useEffectCharge } from '../hooks/useEffectCharge'
+import { useGestureEffects } from '../hooks/useGestureEffects'
 import { triggerSkillAction } from '../utils/actionRouter'
-import { GESTURE_CONFIG } from '../utils/gestureConfig'
 import { CameraView } from '../components/CameraView'
 import { HandOverlay } from '../components/HandOverlay'
 import { StatusBadge } from '../components/StatusBadge'
 import { DebugPanel } from '../components/DebugPanel'
+import { PixiEffectsOverlay } from '../components/PixiEffectsOverlay'
+import type { PixiEffectsHandle } from '../components/PixiEffectsOverlay'
+import { computeEffectAnchors } from '../utils/effectAnchors'
 
 export function Home() {
   const { videoRef, ready, error } = useWebcam()
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const tracking = useHandTracking(videoRef, ready)
+  const canvasRef   = useRef<HTMLCanvasElement>(null)
+  const pixiRef     = useRef<PixiEffectsHandle | null>(null)
   const [lastTriggered, setLastTriggered] = useState<string | null>(null)
-  const [showDebug, setShowDebug] = useState(false)
+  const [showDebug,     setShowDebug]     = useState(false)
+  const [stageSize,     setStageSize]     = useState({ w: 640, h: 480 })
 
-  // Use a ref so the charge-complete callback can call engine.onChargeComplete
-  // without creating a dependency cycle between the two hooks.
-  const onChargeCompleteRef = useRef<() => void>(() => undefined)
+  const tracking = useHandTracking(videoRef, ready)
+  const { playEffect, updateAnchors } = useGestureEffects(pixiRef)
 
-  const { charge, startCharge } = useEffectCharge(
-    useCallback(() => onChargeCompleteRef.current(), [])
-  )
+  // Track stage dimensions from the video element
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    function update() {
+      if (!video) return
+      const w = video.videoWidth  || video.clientWidth  || 640
+      const h = video.videoHeight || video.clientHeight || 480
+      setStageSize({ w, h })
+    }
+    video.addEventListener('loadedmetadata', update)
+    const ro = new ResizeObserver(update)
+    ro.observe(video)
+    update()
+    return () => { video.removeEventListener('loadedmetadata', update); ro.disconnect() }
+  }, [videoRef])
 
   const onGestureTrigger = useCallback((gesture: GestureId) => {
     setLastTriggered(gesture)
-    startCharge(gesture)
-    setTimeout(() => triggerSkillAction(gesture), GESTURE_CONFIG.chargeDurationMs)
-  }, [startCharge])
+    const anchors = computeEffectAnchors(tracking.hands, stageSize.w, stageSize.h)
+    playEffect(gesture, anchors, () => triggerSkillAction(gesture))
+  }, [playEffect, tracking.hands, stageSize])
 
   const engine = useGestureEngine(onGestureTrigger)
 
-  // Wire the ref so the charge-complete handler can always reach the latest engine
-  onChargeCompleteRef.current = engine.onChargeComplete
-
-  // Process each new frame — read-only mutation of a ref, safe outside render
+  // Process tracking frames outside of render
   const prevTs = useRef(0)
   if (tracking.timestamp !== prevTs.current) {
     prevTs.current = tracking.timestamp
     engine.processFrame(tracking)
+    // Keep Pixi anchors live during effect playback
+    const anchors = computeEffectAnchors(tracking.hands, stageSize.w, stageSize.h)
+    updateAnchors(anchors)
   }
 
   const handedness = tracking.hands.map(h => h.handedness)
@@ -58,12 +73,14 @@ export function Home() {
 
       <div className="stage-wrapper">
         <CameraView videoRef={videoRef} canvasRef={canvasRef} ready={ready} />
-        <HandOverlay
-          canvasRef={canvasRef}
-          tracking={tracking}
-          engineState={engine.state}
-          chargeProgress={charge.progress}
-          chargeGesture={charge.gesture}
+        {/* Skeleton landmarks layer */}
+        <HandOverlay canvasRef={canvasRef} tracking={tracking} engineState={engine.state} />
+        {/* Pixi anime effects layer */}
+        <PixiEffectsOverlay
+          ref={pixiRef}
+          width={stageSize.w}
+          height={stageSize.h}
+          style={{ transform: 'scaleX(-1)' }}
         />
       </div>
 
@@ -95,8 +112,8 @@ export function Home() {
         engineState={engine.state}
         handCount={tracking.hands.length}
         handedness={handedness}
-        chargeProgress={charge.progress}
-        chargeGesture={charge.gesture}
+        chargeProgress={0}
+        chargeGesture={null}
       />
     </div>
   )
