@@ -1,0 +1,335 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --border: #1e1e2e;
+  --text: #e2e8f0;
+  --text-dim: #64748b;
+  --purple: #a855f7;
+  --purple-dim: #7c3aed;
+  --red: #dc2626;
+  --red-dim: #991b1b;
+  --green: #22c55e;
+  --yellow: #eab308;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Home ──────────────────────────────────────────────────────────────────── */
+
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem 1rem 2rem;
+  gap: 0.75rem;
+}
+
+.home-header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  text-align: center;
+}
+
+/* ── Camera stage ──────────────────────────────────────────────────────────── */
+
+.stage-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--border);
+}
+
+.camera-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.camera-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.camera-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Status bar ────────────────────────────────────────────────────────────── */
+
+.status-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pill {
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.pill-green  { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.3); color: var(--green); }
+.pill-purple { background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.4); color: var(--purple); }
+.pill-red    { background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.35); color: var(--red); }
+.pill-dim    { background: rgba(255,255,255,0.05); border-color: var(--border); color: var(--text-dim); }
+
+/* ── Legend ────────────────────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.legend-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.legend-gesture { color: var(--text-dim); }
+.legend-arrow   { color: var(--text-dim); }
+.legend-action  { font-weight: 600; }
+.legend-purple  { color: var(--purple); }
+.legend-red     { color: var(--red); }
+
+/* ── Debug ─────────────────────────────────────────────────────────────────── */
+
+.debug-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 6px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.debug-toggle:hover { border-color: var(--purple); color: var(--purple); }
+
+.debug-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  min-width: 260px;
+  font-size: 0.76rem;
+  font-family: monospace;
+}
+
+.debug-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.debug-row:last-child { border-bottom: none; }
+.debug-row span:first-child { color: var(--text-dim); }
+
+/* ── Error banner ──────────────────────────────────────────────────────────── */
+
+.error-banner {
+  background: rgba(220,38,38,0.12);
+  border: 1px solid rgba(220,38,38,0.3);
+  color: var(--red);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+/* ── Demo pages ────────────────────────────────────────────────────────────── */
+
+.demo-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.demo-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.demo-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.chip {
+  padding: 0.2rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.chip-purple { background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); color: var(--purple); }
+.chip-red    { background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.3); color: var(--red); }
+
+.demo-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.demo-section h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Code diff */
+.code-diff {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  color: #e6edf3;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+/* Findings */
+.findings-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.finding-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.finding-top { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+
+.severity-tag {
+  padding: 0.15rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tag-high   { background: rgba(220,38,38,0.2); color: #f87171; }
+.tag-medium { background: rgba(234,179,8,0.2); color: var(--yellow); }
+.tag-low    { background: rgba(34,197,94,0.15); color: var(--green); }
+
+.finding-location { font-size: 0.72rem; font-family: monospace; color: var(--text-dim); }
+.finding-message { font-size: 0.85rem; }
+.finding-suggestion { font-size: 0.8rem; color: var(--text-dim); }
+
+/* PR comments */
+.pr-comments { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; }
+
+/* Simple list */
+.simple-list { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem; }
+
+/* Summary text */
+.summary-text { font-size: 0.9rem; line-height: 1.65; color: var(--text-dim); }
+
+/* Risk table */
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.risk-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+.risk-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.risk-table tr:last-child td { border-bottom: none; }
+.risk-table code { font-size: 0.8rem; color: var(--purple); }
+
+/* Mitigations */
+.mitigations-list { padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; line-height: 1.5; }
+
+/* Verdent button */
+.btn-verdent {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.25rem;
+  background: rgba(168,85,247,0.15);
+  border: 1px solid rgba(168,85,247,0.4);
+  color: var(--purple);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+  width: fit-content;
+}
+.btn-verdent:hover { background: rgba(168,85,247,0.25); }
+.btn-verdent.btn-red {
+  background: rgba(220,38,38,0.12);
+  border-color: rgba(220,38,38,0.35);
+  color: var(--red);
+}
+.btn-verdent.btn-red:hover { background: rgba(220,38,38,0.2); }
