@@ -10,28 +10,30 @@ interface Props {
 }
 
 export function HandOverlay({ canvasRef, tracking }: Props) {
-  const rafRef = useRef<number>(0)
+  // Always-current tracking data without triggering RAF restarts
+  const trackingRef = useRef(tracking)
+  trackingRef.current = tracking
 
+  // Single stable RAF loop — runs for the component's lifetime
   useEffect(() => {
+    let rafId = 0
+
     function draw() {
       const canvas = canvasRef.current
-      if (!canvas) { rafRef.current = requestAnimationFrame(draw); return }
-      const ctx = canvas.getContext('2d')
-      if (!ctx) { rafRef.current = requestAnimationFrame(draw); return }
-
-      const { width: w, height: h } = canvas
-      ctx.clearRect(0, 0, w, h)
-
-      for (const hand of tracking.hands) {
-        drawHandSkeleton(ctx, hand.landmarks, w, h)
+      const ctx = canvas?.getContext('2d')
+      if (canvas && ctx) {
+        const { width: w, height: h } = canvas
+        ctx.clearRect(0, 0, w, h)
+        for (const hand of trackingRef.current.hands) {
+          drawHandSkeleton(ctx, hand.landmarks, w, h)
+        }
       }
-
-      rafRef.current = requestAnimationFrame(draw)
+      rafId = requestAnimationFrame(draw)
     }
 
-    rafRef.current = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(rafRef.current)
-  }, [canvasRef, tracking])
+    rafId = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(rafId)
+  }, [canvasRef])
 
   return null
 }

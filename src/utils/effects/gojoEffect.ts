@@ -125,7 +125,7 @@ export class GojoEffect extends BaseEffect {
     const t3 = subT(progress, p2, 1)
     if (t3 > 0) {
       this.drawRingBurst(pc, t3)
-      applyScreenOverlay(this.vignetteGfx, this.sw, this.sh, GOJO_C.deep, easeOut(t3) * 0.25)
+      applyScreenOverlay(this.vignetteGfx, anchors.stageW, anchors.stageH, GOJO_C.deep, easeOut(t3) * 0.25)
     }
 
     // ── Particles: spawn from mid p1 onward ──────────────────────────────

@@ -94,7 +94,7 @@ export class SukunaEffect extends BaseEffect {
 
     // Screen darkens early
     const darkAlpha = clamp01(t1 * 0.55)
-    applyScreenOverlay(this.vignetteGfx, this.sw, this.sh, SUKUNA_C.darkest, darkAlpha)
+    applyScreenOverlay(this.vignetteGfx, anchors.stageW, anchors.stageH, SUKUNA_C.darkest, darkAlpha)
 
     // ── Phase 2: seal + slashes ────────────────────────────────────────────
     const t2 = subT(progress, p1, p2)
@@ -121,11 +121,11 @@ export class SukunaEffect extends BaseEffect {
 
       // Flash near peak
       if (t3 > 0.65) {
-        applyFlash(this.flashGfx, this.sw, this.sh, (1 - t3) * 1.4)
+        applyFlash(this.flashGfx, anchors.stageW, anchors.stageH, (1 - t3) * 1.4)
       }
 
       // Deepen vignette
-      applyScreenOverlay(this.vignetteGfx, this.sw, this.sh, SUKUNA_C.darkest, 0.55 + easeOut(t3) * 0.25)
+      applyScreenOverlay(this.vignetteGfx, anchors.stageW, anchors.stageH, SUKUNA_C.darkest, 0.55 + easeOut(t3) * 0.25)
     }
 
     // ── Particles ─────────────────────────────────────────────────────────

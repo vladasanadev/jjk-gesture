@@ -11,10 +11,9 @@ export function useHandTracking(videoRef: React.RefObject<HTMLVideoElement>, rea
     if (!ready) return
 
     let stopped = false
-    let landmarker: Awaited<ReturnType<typeof getHandLandmarker>> | null = null
 
-    getHandLandmarker().then(lm => {
-      landmarker = lm
+    getHandLandmarker().then(landmarker => {
+      if (stopped) return
 
       function loop() {
         if (stopped) return
@@ -24,7 +23,7 @@ export function useHandTracking(videoRef: React.RefObject<HTMLVideoElement>, rea
           if (ts !== lastTs.current) {
             lastTs.current = ts
             try {
-              const detection = landmarker!.detectForVideo(video, ts)
+              const detection = landmarker.detectForVideo(video, ts)
               const hands: TrackedHand[] = (detection.landmarks ?? []).map((lmArr, i) => ({
                 landmarks: lmArr,
                 handedness: (detection.handedness?.[i]?.[0]?.displayName ?? 'Right') as 'Left' | 'Right',
@@ -44,6 +43,7 @@ export function useHandTracking(videoRef: React.RefObject<HTMLVideoElement>, rea
     return () => {
       stopped = true
       cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
     }
   }, [ready, videoRef])
 
