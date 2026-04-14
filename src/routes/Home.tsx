@@ -15,8 +15,9 @@ import { computeEffectAnchors } from '../utils/effectAnchors'
 
 export function Home() {
   const { videoRef, ready, error } = useWebcam()
-  const canvasRef   = useRef<HTMLCanvasElement>(null)
-  const pixiRef     = useRef<PixiEffectsHandle | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pixiRef   = useRef<PixiEffectsHandle | null>(null)
+
   const [lastTriggered, setLastTriggered] = useState<string | null>(null)
   const [showDebug,     setShowDebug]     = useState(false)
   const [stageSize,     setStageSize]     = useState({ w: 640, h: 480 })
@@ -24,14 +25,23 @@ export function Home() {
   const tracking = useHandTracking(videoRef, ready)
   const { playEffect, updateAnchors } = useGestureEffects(pixiRef)
 
-  // Track stage dimensions from the video element
+  // Stable refs so callbacks don't go stale
+  const trackingRef  = useRef(tracking)
+  const stageSizeRef = useRef(stageSize)
+  trackingRef.current  = tracking
+  stageSizeRef.current = stageSize
+
+  // Keep stage size in sync with the CSS-rendered video dimensions.
+  // We intentionally use clientWidth/Height (display pixels) here, NOT
+  // videoWidth/Height (intrinsic resolution). The Pixi canvas is sized to
+  // the display dimensions so effects stay inside the container bounds.
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
     function update() {
       if (!video) return
-      const w = video.videoWidth  || video.clientWidth  || 640
-      const h = video.videoHeight || video.clientHeight || 480
+      const w = video.clientWidth  || 640
+      const h = video.clientHeight || 480
       setStageSize({ w, h })
     }
     video.addEventListener('loadedmetadata', update)
@@ -41,23 +51,31 @@ export function Home() {
     return () => { video.removeEventListener('loadedmetadata', update); ro.disconnect() }
   }, [videoRef])
 
+  // Ref so onGestureTrigger can always reach the latest engine.onChargeComplete
+  const onChargeCompleteRef = useRef<() => void>(() => undefined)
+
   const onGestureTrigger = useCallback((gesture: GestureId) => {
     setLastTriggered(gesture)
-    const anchors = computeEffectAnchors(tracking.hands, stageSize.w, stageSize.h)
-    playEffect(gesture, anchors, () => triggerSkillAction(gesture))
-  }, [playEffect, tracking.hands, stageSize])
+    const { hands } = trackingRef.current
+    const { w, h }  = stageSizeRef.current
+    const anchors   = computeEffectAnchors(hands, w, h)
+    playEffect(gesture, anchors, () => {
+      triggerSkillAction(gesture)
+      onChargeCompleteRef.current()   // advance FSM → COOLDOWN
+    })
+  }, [playEffect])
 
   const engine = useGestureEngine(onGestureTrigger)
+  onChargeCompleteRef.current = engine.onChargeComplete
 
-  // Process tracking frames outside of render
-  const prevTs = useRef(0)
-  if (tracking.timestamp !== prevTs.current) {
-    prevTs.current = tracking.timestamp
+  // Drive the gesture engine from tracking updates — in useEffect, NOT in render
+  useEffect(() => {
     engine.processFrame(tracking)
-    // Keep Pixi anchors live during effect playback
-    const anchors = computeEffectAnchors(tracking.hands, stageSize.w, stageSize.h)
+    const { w, h } = stageSizeRef.current
+    const anchors  = computeEffectAnchors(tracking.hands, w, h)
     updateAnchors(anchors)
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracking.timestamp])
 
   const handedness = tracking.hands.map(h => h.handedness)
 
@@ -67,15 +85,11 @@ export function Home() {
         <h1>Gesture Skill Router</h1>
       </header>
 
-      {error && (
-        <div className="error-banner">Camera error: {error}</div>
-      )}
+      {error && <div className="error-banner">Camera error: {error}</div>}
 
       <div className="stage-wrapper">
         <CameraView videoRef={videoRef} canvasRef={canvasRef} ready={ready} />
-        {/* Skeleton landmarks layer */}
         <HandOverlay canvasRef={canvasRef} tracking={tracking} engineState={engine.state} />
-        {/* Pixi anime effects layer */}
         <PixiEffectsOverlay
           ref={pixiRef}
           width={stageSize.w}

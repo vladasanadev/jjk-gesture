@@ -6,7 +6,7 @@ interface WebcamState {
 }
 
 export function useWebcam() {
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const videoRef  = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [state, setState] = useState<WebcamState>({ ready: false, error: null })
 
@@ -18,11 +18,23 @@ export function useWebcam() {
       .then(stream => {
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return }
         streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          videoRef.current.onloadedmetadata = () => {
-            if (!cancelled) setState({ ready: true, error: null })
-          }
+        const video = videoRef.current
+        if (!video) { stream.getTracks().forEach(t => t.stop()); return }
+
+        video.srcObject = stream
+
+        const onMeta = () => {
+          if (cancelled) return
+          video.play()
+            .then(() => { if (!cancelled) setState({ ready: true, error: null }) })
+            .catch(err => { if (!cancelled) setState({ ready: false, error: (err as Error).message }) })
+        }
+
+        video.addEventListener('loadedmetadata', onMeta, { once: true })
+
+        // Fallback: if metadata already loaded
+        if (video.readyState >= 1) {
+          onMeta()
         }
       })
       .catch(err => {
@@ -32,6 +44,10 @@ export function useWebcam() {
     return () => {
       cancelled = true
       streamRef.current?.getTracks().forEach(t => t.stop())
+      streamRef.current = null
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
     }
   }, [])
 
